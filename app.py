@@ -36,6 +36,7 @@ def register_user():
         try:
             db.session.commit()
             session['user_id'] = new_user.username
+            session['is_admin'] = new_user.is_admin
             return redirect(f'/users/{new_user.username}')
         except IntegrityError:
             flash("Username taken")
@@ -53,6 +54,7 @@ def login():
         user = User.authenticate(username,password)
         if user:
             session['user_id'] = user.username
+            session['is_admin'] = user.is_admin
             return redirect(f'/users/{user.username}')
     return render_template('login.html', form=form)
 
@@ -73,7 +75,7 @@ def show_user(username):
 
 @app.route('/users/<username>/delete', methods=['POST'])
 def delete_user(username):
-    if session['user_id'] == username:
+    if session['user_id'] == username or session['is_admin']:
         user = User.query.get_or_404(username)
         db.session.delete(user)
         try:
@@ -83,31 +85,35 @@ def delete_user(username):
         except:
             flash("Error deleting user")
         return redirect(f'/register')
-    flash("You can only delete your own account.")
+    flash("You do not have permission to delete this account.")
     return redirect(f'/users/{username}')
 
 @app.route('/users/<username>/feedback/add', methods=['GET','POST'])
 def add_feedback(username):
     user = User.query.get_or_404(username)
-    form = FeedbackForm()
-    if form.validate_on_submit():
-        title = form.title.data
-        content = form.content.data
-        new_feedback = Feedback(title=title,content=content,username=session['user_id'])
-        db.session.add(new_feedback)
-        try:
-            db.session.commit()
-            flash("Feedback submitted successfully!")
-        except:
-            flash("Error submitting feedback")
-        return redirect(f'/users/{username}')
-    return render_template('feedback-add.html',form=form, user=user)
+    if session['user_id'] == username or session['is_admin']:
+        form = FeedbackForm()
+        if form.validate_on_submit():
+            title = form.title.data
+            content = form.content.data
+            new_feedback = Feedback(title=title,content=content,username=username)
+            db.session.add(new_feedback)
+            try:
+                db.session.commit()
+                flash("Feedback submitted successfully!")
+            except:
+                flash("Error submitting feedback")
+            return redirect(f'/users/{username}')
+        return render_template('feedback-add.html',form=form, user=user)
+    flash("You do not have permission to add feedback for this user")
+    return redirect(f'/users/{username}')
+    
 
 @app.route('/feedback/<int:feedback_id>/update', methods=['GET','POST'])
 def update_feedback(feedback_id):
     feedback = Feedback.query.get_or_404(feedback_id)
     user = User.query.get_or_404(feedback.username)
-    if session['user_id'] == feedback.username:
+    if session['user_id'] == feedback.username or session['is_admin']:
         form = FeedbackForm(obj=feedback)
         if form.validate_on_submit():
             feedback.title = form.title.data
@@ -120,15 +126,15 @@ def update_feedback(feedback_id):
                 flash("Error editing feedback")
             return redirect(f'/users/{feedback.username}')
     else:
-        flash("You must be logged in as this user to edit this feedback")
-        return redirect('/users/{feedback.username}')
+        flash("You do not have permission to edit this user's feedback")
+        return redirect(f"/users/{feedback.username}")
     return render_template('feedback-edit.html',form=form, user=user)
 
 @app.route('/feedback/<int:feedback_id>/delete', methods=['POST'])
 def delete_feedback(feedback_id):
     feedback = Feedback.query.get_or_404(feedback_id)
     user = User.query.get_or_404(feedback.username)
-    if session['user_id'] == feedback.username:
+    if session['user_id'] == feedback.username or session['is_admin']:
         db.session.delete(feedback)
         try:
             db.session.commit()
@@ -136,12 +142,13 @@ def delete_feedback(feedback_id):
         except:
             flash("Error deleting feedback")
         return redirect(f'/users/{user.username}')
-    flash("You can only delete feedback posted from your account.")
+    flash("You do not have permission to delete this feedback.")
     return redirect(f'/users/{user.username}')
 
 @app.route('/logout')
 def logout():
     session.pop('user_id')
+    session.pop('is_admin')
     return redirect('/')
 
 

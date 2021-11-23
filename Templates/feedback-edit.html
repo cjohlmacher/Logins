@@ -3,7 +3,7 @@
 {% block title %}Add Feedback{% endblock %}
 
 {% block content %}
-    {% if session['user_id'] == user.username %}
+    {% if session['user_id'] == user.username or session['is_admin'] %}
             <form method="POST">
                 {{ form.hidden_tag() }}
                 <h2>Edit Your Feedback:</h2>
@@ -22,6 +22,6 @@
                 <a href="/users/{{user.username}}">Back</a>
             </form>
     {% else %}
-            <h2>You must be logged in as this user to submit feedback for them.</h2>
+            <h2>You do not have permission to edit this user's feedback.</h2>
     {% endif %}
 {% endblock %}

@@ -18,6 +18,7 @@ class User(db.Model):
     email = db.Column(db.String(50), unique=True, nullable=False)
     first_name = db.Column(db.String(30), nullable=False)
     last_name = db.Column(db.String(30),nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
 
     @classmethod
     def register(cls,username,password,email,first_name,last_name):
@@ -34,7 +35,7 @@ class User(db.Model):
         return None
 
     def __repr__(self):
-        return f"<User {self.username} {self.email} {self.first_name} {self.last_name}>"
+        return f"<User {self.username} {self.email} {self.first_name} {self.last_name} Admin: {self.is_admin}>"
 
 class Feedback(db.Model):
     """ Feedback model """

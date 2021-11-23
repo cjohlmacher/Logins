@@ -11,7 +11,7 @@
     {% for feedback in user.feedback %}
         <li>
             <b>{{feedback.title}}</b> {{feedback.content}} 
-            {% if session['user_id'] == user.username %}
+            {% if session['user_id'] == user.username or session['is_admin'] %}
                 <a href='/feedback/{{feedback.id}}/update'>Edit</a>
                 <form action="/feedback/{{feedback.id}}/delete" method="POST">
                     <button type="submit">Delete</button>
@@ -19,7 +19,7 @@
             {% endif %}
         </li>
     {% endfor %}
-    {% if session['user_id'] == user.username %}
+    {% if session['user_id'] == user.username or session['is_admin'] %}
         <br>
         <a href="/users/{{user.username}}/feedback/add">Add New Feedback</a>
         <br>
